@@ -320,7 +320,7 @@ class YoutubeDataset:
         print(f"Locally cached playlist {playlist_title} ({playlist_id}) to {self.cache_dir}")
 
     async def scrape_raw_data(self):
-        # Get existing splits info so that we can do increamental scraping.
+        # Get existing splits info so that we can do incremental scraping.
 
         for channel_name, playlist_names in self.channels.items():
             all_videos = []
