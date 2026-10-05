@@ -18,6 +18,10 @@ Can language models truly act like specific humans — not just produce humanlik
 
 We provide end-to-end tooling for collecting raw data from six sources and processing them into train/val/test splits with LLM-generated user personas. See [`humanual_datasets/README.md`](humanual_datasets/README.md) for full instructions.
 
+This is the part I am modifying; the original authors utilize a different format of persona than what I would like to explore, so I will be modifying the persona generation section of the pipeline and gathering only the data I need. 
+
+I am also using data from other sources, so it is possible a future step becomes adding those in here as well
+
 ### 2. Human Evaluation
 
 The user study interface lets annotators compare their own responses against model-generated ones on Reddit posts.

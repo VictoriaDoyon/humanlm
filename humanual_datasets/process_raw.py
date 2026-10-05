@@ -818,7 +818,7 @@ class RawDatasetProcessor:
                         )
                 else:
                     ds: dict[str, Dataset] = load_dataset(self.pull_from_hub, name=subset, verification_mode=self.verification_mode)
-                
+
                 subsets_progress.update(subsets_task_id, description=f"Overall")
                 split_task_id = split_progress.add_task(f"Loading subset {subset}", total=len(splits))
                 for k in splits:
@@ -838,6 +838,7 @@ class RawDatasetProcessor:
                             continue
                     # If provided `allowed_user_ids`, do the filtering.
                     v: pl.DataFrame = v.to_polars()
+                    v = v.drop('persona', strict=False) #I'm pulling from the processed hf dataset so this will drop their persona column
                     if allowed_user_ids is not None:
                         print(f"[{datetime.now()}] Filtering split {subset}/{k}.")
                         to_polars_task_id = row_progress.add_task(f"To polars for {subset}/{k}", total=1)

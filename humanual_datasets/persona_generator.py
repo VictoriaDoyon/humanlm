@@ -34,6 +34,12 @@ PERSONA_PROMPT_TEMPLATE = """You are an expert at analyzing a {app_name} user be
 5. Statistics:
 - Average / Minimum / Maximum response length (in words). Most frequent words or phrases. Variations in sentence structure and so on.
 
+6. Information Disclosure Rate:
+- At what rate do they share information? For example, share all info and are very specific, hold off details unless prompted, are purposefully unhelpful and so on.
+
+7. Error Reaction:
+- How do they react to other's errors? For example, patient, actively hostile, gradually turns impatient over the conversation and so on.
+
 ## Output (strict JSON):
 {{
     "analysis": <str>,
@@ -48,7 +54,9 @@ PERSONA_PROMPT_TEMPLATE = """You are an expert at analyzing a {app_name} user be
     "interests": <a list of 8-12 phrases>,
     "values": <a list of 8-12 phrases>,
     "communication": <a list of 8-12 phrases>,
-    "statistics": <a list of 5-10 phrases>
+    "statistics": <a list of 5-10 phrases>,
+    "informationdisclosurerate": <a list of 1-5 phrases>,
+    "errorreaction": <a list of 1-8 phrases>
 }}
 
 ## Instructions:
@@ -235,7 +243,7 @@ def check_persona(persona: dict) -> bool:
         return False
 
     # Check top-level keys match exactly
-    required_keys = {"demographics", "interests", "values", "communication", "statistics"}
+    required_keys = {"demographics", "interests", "values", "communication", "statistics", "informationdisclosurerate", "errorreaction"}
     if set(persona.keys()) != required_keys:
         return False
 
@@ -252,7 +260,7 @@ def check_persona(persona: dict) -> bool:
         return False
 
     # Check list fields: must be non-empty lists of strings
-    list_fields = ["interests", "values", "communication", "statistics"]
+    list_fields = ["interests", "values", "communication", "statistics", "informationdisclosurerate", "errorreaction"]
     for field in list_fields:
         value = persona[field]
         if not isinstance(value, list) or not value:
@@ -300,7 +308,9 @@ class UserPersonaGenerator:
                 "interests": ["Unable to determine interests"],
                 "values": ["Unable to determine values"],
                 "communication": ["Unable to determine communication style"],
-                "statistics": ["Unable to determine statistics"]
+                "statistics": ["Unable to determine statistics"],
+                "informationdisclosurerate": ["Unable to determine information disclosure rate"],
+                "errorreaction": ["Unable to determine error reaction"]
             }
             # Update with user metadata if provided
             if use_user_profile_fields is not None and user_metadata is not None:
