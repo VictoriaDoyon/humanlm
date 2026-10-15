@@ -1400,7 +1400,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--llm_model",
         type=str,
-        default="anthropic/claude-sonnet-4-5-20250929",
+        default="hosted_vllm/Qwen/Qwen3.8-27B",
         help="LLM model to use for persona generation",
     )
     parser.add_argument(
@@ -1415,6 +1415,12 @@ if __name__ == "__main__":
         default=4096,
         help="LLM max tokens to use for persona generation",
     )
+    parser.add_argument(
+            "--llm_api_base",
+            type=str,
+            default="http://localhost:8000/v1",
+            help="LLM max tokens to use for persona generation",
+        )
     parser.add_argument(
         "--partition_by",
         type=str,
@@ -1487,7 +1493,7 @@ if __name__ == "__main__":
         'dataset_name', 'splits', 'max_num_comments', 'min_num_comments',
         'persona_history_length', 'remove_used_persona_rows',
         'unseen_frac', 'seen_frac', 'val_frac', 'partition_by',
-        'llm_model', 'llm_temperature', 'llm_max_tokens', 'max_samples', 'max_comment_length',
+        'llm_model', 'llm_temperature', 'llm_max_tokens', 'llm_api_base', 'max_samples', 'max_comment_length',
         'global_frac',
     ]
     
@@ -1556,6 +1562,7 @@ if __name__ == "__main__":
             "model": args.llm_model,
             "temperature": args.llm_temperature,
             "max_tokens": args.llm_max_tokens,
+            "api_base": args.llm_api_base
         },
         preview_personas=args.preview_personas,
         fixed_persona=args.fixed_persona,

@@ -331,6 +331,9 @@ class UserPersonaGenerator:
 
                 except Exception as e:
                     if i < self.num_retries - 1:
+                        if "vllm" in str(e).lower():
+                            print(f"vLLM exception; early stopping. E: {e}")
+                            raise e
                         time.sleep(60)
                         llm_kwargs['temperature'] = max(llm_kwargs.get('temperature', 0), 0.2)
                         print(f"Error generating persona: {e} for {user_id}. Retrying...")
