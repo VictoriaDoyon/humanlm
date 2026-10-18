@@ -20,4 +20,4 @@ vllm_serve Qwen/Qwen3.8-27B
 
 source datasets/bin/activate
 
-python -m humanual_datasets.process_raw --dataset_name humanual_opinion --splits train --pull_from_hub snap-stanford/humanual-opinion --save_dir /scratch/general/vast/u1645697/data/humanual-opinion-processed --llm_model hosted_vllm/Qwen/Qwen3.8-27B --partition_by post
+python -m humanual_datasets.process_raw --dataset_name humanual_opinion --splits train --pull_from_hub snap-stanford/humanual-opinion --save_dir /scratch/general/vast/u1645697/data/humanual-opinion-processed --llm_model hosted_vllm/Qwen/Qwen3.8-27B --partition_by post --config $SLURM_SUBMIT_DIR/humanual_datasets/configs/humanual_opinion.yaml
