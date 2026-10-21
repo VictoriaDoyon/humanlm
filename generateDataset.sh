@@ -13,11 +13,11 @@
 #SBATCH --qos=granite-gpu
 
 cd $SLURM_SUBMIT_DIR
-module load gcc/13.4.0 python/3.14.5
-module load vllm/current
+module load fall2026indpstdy
+module load vllm
 
-vllm_serve Qwen/Qwen3.8-27B
 
-source datasets/bin/activate
+vllm_serve Qwen/Qwen3.8-27B --tensor-parallel-size 2 --gpu-memory-utilization 0.90 --download-dir /scratch/general/vast/u1645697/vllm_cache --port 3200
 
-python -m humanual_datasets.process_raw --dataset_name humanual_opinion --splits train --pull_from_hub snap-stanford/humanual-opinion --save_dir /scratch/general/vast/u1645697/data/humanual-opinion-processed --llm_model hosted_vllm/Qwen/Qwen3.8-27B --partition_by post --config $SLURM_SUBMIT_DIR/humanual_datasets/configs/humanual_opinion.yaml
+
+python -m humanual_datasets.process_raw --dataset_name humanual_opinion --splits train --pull_from_hub snap-stanford/humanual-opinion --save_dir /scratch/general/vast/u1645697/data/humanual-opinion-processed --llm_model hosted_vllm/Qwen/Qwen3.8-27B --partition_by post --config $SLURM_SUBMIT_DIR/humanual_datasets/configs/humanual_opinion.yaml --llm_api_base http://localhost:3200/v1
