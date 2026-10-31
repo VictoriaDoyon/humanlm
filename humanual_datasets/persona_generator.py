@@ -10,8 +10,11 @@ import litellm
 import polars as pl
 from dotenv import load_dotenv
 
+import mlflow
+
 PERSONA_PROMPT_TEMPLATE = """Analyze the target user's responses in a {app_name} conversation. Produce a reusable personality-style profile: how someone with this communication pattern tends to make requests, provide context, refine an answer, and respond to friction.
 
+PERSONA_PROMPT_TEMPLATE = mlflow.genai.load_prompt("prompts:/persona-prompt-template@latest")
 <responses>
 {comments_text}
 </responses>

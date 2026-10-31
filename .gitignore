@@ -2,5 +2,5 @@
 .gradio
 annotations/
 __pycache__/
-data/
 datasets/
+data/

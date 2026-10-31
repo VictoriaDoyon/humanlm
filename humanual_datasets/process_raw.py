@@ -45,6 +45,11 @@ from .persona_generator import (
     save_persona_checkpoint,
 )
 
+import mlflow
+
+mlflow.set_tracking_uri('http://localhost:5000')
+mlflow.litellm.autolog()
+
 patch_datasets_tqdm()
 
 RANDOM_SEED = 42
@@ -1499,7 +1504,7 @@ if __name__ == "__main__":
     
     # Create a deterministic config dict with sorted keys
     config_dict = {k: getattr(args, k) for k in sorted(config_keys)}
-    
+    mlflow.update_current_trace(tags=config_dict)
     # Use JSON for deterministic string representation
     args_str = json.dumps(config_dict, sort_keys=True)
     hash_str = hashlib.md5(args_str.encode()).hexdigest()[:8]
