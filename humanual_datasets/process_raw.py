@@ -45,6 +45,11 @@ from .persona_generator import (
     save_persona_checkpoint,
 )
 
+import mlflow
+
+mlflow.set_tracking_uri('http://localhost:5000')
+mlflow.litellm.autolog()
+
 patch_datasets_tqdm()
 
 RANDOM_SEED = 42
@@ -1403,6 +1408,12 @@ if __name__ == "__main__":
         help="LLM model to use for persona generation",
     )
     parser.add_argument(
+        "--llm_api_address",
+        type=str,
+        default="anthropic/claude-sonnet-4-5-20250929",
+        help="LLM model to use for persona generation",
+    )
+    parser.add_argument(
         "--llm_temperature",
         type=float,
         default=0.0,
@@ -1486,13 +1497,13 @@ if __name__ == "__main__":
         'dataset_name', 'splits', 'max_num_comments', 'min_num_comments',
         'persona_history_length', 'remove_used_persona_rows',
         'unseen_frac', 'seen_frac', 'val_frac', 'partition_by',
-        'llm_model', 'llm_temperature', 'llm_max_tokens', 'max_samples', 'max_comment_length',
+        'llm_model', 'llm_temperature', 'llm_max_tokens', 'llm_api_address', 'max_samples', 'max_comment_length',
         'global_frac',
     ]
     
     # Create a deterministic config dict with sorted keys
     config_dict = {k: getattr(args, k) for k in sorted(config_keys)}
-    
+    mlflow.update_current_trace(tags=config_dict)
     # Use JSON for deterministic string representation
     args_str = json.dumps(config_dict, sort_keys=True)
     hash_str = hashlib.md5(args_str.encode()).hexdigest()[:8]
@@ -1555,6 +1566,7 @@ if __name__ == "__main__":
             "model": args.llm_model,
             "temperature": args.llm_temperature,
             "max_tokens": args.llm_max_tokens,
+            "base_url": args.llm_api_address
         },
         preview_personas=args.preview_personas,
         fixed_persona=args.fixed_persona,

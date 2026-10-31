@@ -463,3 +463,20 @@ Each dataset module (e.g., `humanual_opinion.py`) can define optional functions 
 
 - `customized_filter_fn(row: dict) -> bool`: Additional row-level filtering logic.
 - `complete_dataset_fn(df: pl.DataFrame, split: str) -> pl.DataFrame`: Transform the dataset after filtering.
+
+
+python -m humanual_datasets.process_raw \
+    --dataset_name humanual_chat \
+    --splits train \
+    --pull_from_hub snap-stanford/humanual-chat \
+    --min_total_turns 5 \
+    --max_total_turns 10 \
+    --min_num_comments 5 \
+    --max_num_comments 10 \
+    --min_turns_for_train 6 \
+    --val_frac 0.05 \
+    --unseen_frac 0.05 \
+    --seen_frac 0.05 \
+    --save_dir data/humanual_chat_processed \
+    --partition_by turn \
+    --overwrite
