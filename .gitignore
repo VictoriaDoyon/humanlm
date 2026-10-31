@@ -4,3 +4,5 @@ annotations/
 __pycache__/
 datasets/
 data/
+mlflow.db
+mlartifacts/
