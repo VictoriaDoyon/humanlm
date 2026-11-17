@@ -6,3 +6,4 @@ datasets/
 data/
 mlflow.db
 mlartifacts/
+mlruns/
