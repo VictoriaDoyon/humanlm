@@ -16,7 +16,7 @@ import os
 import polars as pl
 
 DATASET_NAME = "Hi-ToM/Hi-ToM_Dataset"
-DATASET_VERSION = "1.0.0"
+DATASET_VERSION = "1.0.1"
 
 class HiToMDataset:
     def __init__(
@@ -27,14 +27,47 @@ class HiToMDataset:
         self.push_to_hub = push_to_hub
         self.save_local = save_local
 
+    def create_prompt(self, data: dict) -> str:
+        """Create structured prompt source: https://openreview.net/pdf?id=CS62jXziqB (paper itself)"""
+        prompt = f"""Read the following story and answer the
+multiple-choice question. {"Provide the answer without explanation." if data["prompting_type"] == "MC" else "Think step-by-step"}
+Story:
+{data["story"]}
+Question: {data["question"]}
+Choices: {data["choices"]}"""
+        return prompt
+
     async def create_raw_dataset(self, mlflow_service: MLFlowService):
         hitom = pl.read_parquet(f"hf://datasets/{DATASET_NAME}@~parquet/default/train/*.parquet")
-        hitom.with_columns(
-            {
-                "bot_answer": [],
-                "prompt": [],
-            }
+        choices = hitom.get_column("choices")
+        correct_answer = hitom.get_column("answer")
+        incorrect_answer = (
+            choices.str.split(",")
+                .list.eval(
+                    pl.element()
+                    .str.strip_chars()
+                    .str.replace(r"^[A-Z]+\.\s*", "")
+                )
+            .list.set_difference(correct_answer.str.split(""))
+            .list.sample(1).list.first().alias("bot_answer")
         )
+
+        hitom = hitom.with_columns(
+            pl.concat_list(correct_answer, incorrect_answer)
+                    .list.sample(n=1, seed=42)
+                    .list.first().alias("bot_answer"),
+            pl.struct(
+                    "prompting_type",
+                    "story",
+                    "question",
+                    "choices",
+                )
+                .map_elements(
+                    self.create_prompt,
+                    return_dtype=pl.String,
+                ).alias("prompt")
+        )
+
         print(f"[{datetime.now()}] Memory before converting to Dataset: {memory_usage()}")
         if self.save_local or self.push_to_hub:
             mlflow_service.create_or_update_versioned_dataset(
