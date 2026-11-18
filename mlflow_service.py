@@ -169,16 +169,18 @@ class MLFlowService():
             commit_message=commit_message
         )
 
-# #     def track_prompt_from_md_file(self, prompt_name, prompt_template_path, commit_message):
-# #         '''
-# #             Create or update prompt in MLFlow system. Use same name to update prompt
-# #         '''
-# #         prompt_template = #read file
-# #         mlflow.genai.register_prompt(
-# #             name=prompt_name,
-# #             template=prompt_template,
-# #             commit_message=commit_message
-# #         )
+    def track_prompt_from_md_file(self, prompt_name, prompt_template_path, commit_message):
+        '''
+            Create or update prompt in MLFlow system. Use same name to update prompt
+        '''
+        prompt_template = None
+        with open(prompt_template_path, "r") as f:
+            prompt_template = f.read()
+        if prompt_template == None:
+            raise ValueError("Prompt is null")
+        self.track_prompt(
+            prompt_name=prompt_name, prompt_template=prompt_template, commit_message=commit_message
+        )
 
     def get_latest_prompt_by_name(self, prompt_template_name):
         return mlflow.genai.load_prompt(f"prompts:/{prompt_template_name}@latest")
