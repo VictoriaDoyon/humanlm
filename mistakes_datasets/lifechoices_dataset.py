@@ -7,7 +7,7 @@ import argparse
 import asyncio
 from datetime import datetime
 
-from datasets import Dataset, Sequence, Features, Value, load_dataset
+from datasets import Dataset
 import argparse
 from datetime import datetime
 from .utils import memory_usage
@@ -22,7 +22,7 @@ import random
 
 DATASET_NAME = "LifeChoices"
 DATASET_URL = "https://raw.githubusercontent.com/airaer1998/LifeChoice/refs/heads/main/data/data.json"
-DATASET_VERSION = "1.0.0"
+DATASET_VERSION = "1.0.1"
 
 FEATURES = pl.Schema({
     "Character's Choice": pl.String,
@@ -48,6 +48,34 @@ class LifeChoicesDataset:
         self.push_to_hub = push_to_hub
         self.save_local = save_local
 
+    def create_prompt(self, character_data: dict) -> str:
+        """Create structured prompt source: https://github.com/airaer1998/LifeChoice/blob/main/test_llms.py"""
+        prompt = f"""Please play the role of {character_data['character_name']} based on the Profile and make your life choice under the Scenario regarding Question. Return the option letter (A, B, C, or D) that your character should most appropriately choose in the current scenario. The Profile consists of Description and Memory, where Description is an overall description of the character, and Memory consists of specific events the character has experienced.
+
+# Inputs:
+1. Profile:
+1.1. Description
+{character_data['character_name']}
+
+1.2. Memory
+{character_data['input_text']}
+
+2. Scenario:
+{character_data['Multiple Choice Question']['Scenario']}
+
+3. Question:
+{character_data['Multiple Choice Question']['Question']}
+
+4. Options:
+A. {character_data['Multiple Choice Question']['Options'][0]}
+B. {character_data['Multiple Choice Question']['Options'][1]}
+C. {character_data['Multiple Choice Question']['Options'][2]}
+D. {character_data['Multiple Choice Question']['Options'][3]}
+
+# Outputs:
+Your choice(A, B, C, or D):"""
+        return prompt
+
     async def create_raw_dataset(self, mlflow_service: MLFlowService):
         response = requests.get(DATASET_URL)
         response.raise_for_status()
@@ -59,24 +87,30 @@ class LifeChoicesDataset:
             else:
                 dataset.append(row)
         lifechoices = pl.DataFrame(dataset, schema=FEATURES)
-        mcq = lifechoices.select("Multiple Choice Question").to_series()
-        incorrect_answer = mcq.struct.field("Options").list.filter(pl.element() != mcq.struct.field("Correct Answer")).list.sample(n=1, seed=50).alias("answer")
-        
-        # # corr_list.append(
-        # #                 pl.DataFrame([is_correct_column, correct_answer_column]).select(
-        # #                     pl.struct(
-        # #                         is_correct="is_correct_column", 
-        # #                         correct_answer="correct_answer_column"
-        # #                     ).alias("correction_record"),
-                            
-        # #                 ).to_series()
-        # #             )
-        # # lifechoices.with_columns(
-        # #     {
-        # #         "answer": [],
-        # #         "prompt": [],
-        # #     }
-        # # )
+        lifechoices = lifechoices.filter(~pl.col("Choice's Location").is_in(["N/A", "Not applicable"]))
+        mcq = lifechoices.get_column("Multiple Choice Question")
+        correct_answer = mcq.struct.field("Correct Answer")
+        incorrect_answer = (
+            mcq.struct.field("Options").list.eval(pl.element().str.slice(0, 1))
+            .list.set_difference(correct_answer.str.split(""))
+            .list.sample(1).list.first().alias("answer")
+        )
+
+        lifechoices = lifechoices.with_columns(
+            pl.concat_list(correct_answer, incorrect_answer)
+                    .list.sample(n=1, seed=42)
+                    .list.first().alias("answer"),
+            pl.struct(
+                    "character_name",
+                    "input_text",
+                    "Multiple Choice Question",
+                )
+                .map_elements(
+                    self.create_prompt,
+                    return_dtype=pl.String,
+                ).alias("prompt")
+        )
+
         print(f"[{datetime.now()}] Memory before converting to Dataset: {memory_usage()}")
         if self.save_local or self.push_to_hub:
             mlflow_service.create_or_update_versioned_dataset(
