@@ -1,14 +1,15 @@
 #!/bin/bash
 
 set -Eeuo pipefail
+export VLLM_USE_V2_MODEL_RUNNER=1
 
-model="RedHatAI/gemma-4-12B-it-FP8-Dynamic"
-image="vllm/vllm-openai:gemma4-unified"
+model="RedHatAI/gemma-4-26B-A4B-it-NVFP4" ##"google/gemma-4-31B-it"
+image="vllm/vllm-openai:v0.34.0"
 enable_auto_tool_choice=true
 tool_call_parser="gemma4"
-reasoning_parser=""
+reasoning_parser="gemma4"
 chat_template="examples/tool_chat_template_gemma4.jinja"
-gpu_memory_utilizaton="0.95"
+gpu_memory_utilizaton="0.90"
 gpus="all"
 fail_on_environ_validation=true
 kv_cache_dtype="fp8"
