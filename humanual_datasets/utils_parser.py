@@ -99,14 +99,16 @@ def parse_messages_title(messages, strip_sys_prompt=True):
             if not meta:
                 return {}
             try:
-                return json.loads(meta)
+                data = json.loads(meta)
+                if isinstance(data, str):
+                    data = json.loads(data)
+                return data
             except json.JSONDecodeError:
                 return {}
         return {}
 
     first = messages[0]
     meta = get_meta_dict(first)
-
     counts = meta.get("counts", {}) or {}
     title = counts.get("title") or meta.get("title") or ""
     subtitle = counts.get("subtitle") or meta.get("subtitle") or ""

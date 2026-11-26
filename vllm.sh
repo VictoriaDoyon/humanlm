@@ -3,23 +3,18 @@
 set -Eeuo pipefail
 export VLLM_USE_V2_MODEL_RUNNER=1
 
-model="RedHatAI/gemma-4-26B-A4B-it-NVFP4" ##"google/gemma-4-31B-it"
-image="vllm/vllm-openai:v0.34.0"
+model="RedHatAI/gemma-4-12B-it-NVFP4"
 enable_auto_tool_choice=true
 tool_call_parser="gemma4"
 reasoning_parser="gemma4"
-chat_template="examples/tool_chat_template_gemma4.jinja"
-gpu_memory_utilizaton="0.90"
-gpus="all"
-fail_on_environ_validation=true
+chat_template="templates/examples/tool_chat_template_gemma4.jinja"
+gpu_memory_utilization="0.40"
 kv_cache_dtype="fp8"
-port="8000"
-cache="~/.cache/huggingface"
-gpu_memory_utilization=""
-download_dir=""
+port="8800"
+cache="/home/victoria/Repos/humanlm/cache"
+download_dir="/home/victoria/Repos/humanlm/cache"
 tensor_parallel_size="1"
 data_parallel_size=""
-reasoning_parser="gemma4"
 use_rust=false
 
 die() {
@@ -120,25 +115,21 @@ while (($# > 0)); do
             ;;
     esac
 done
-
+export HF_HOME="/home/victoria/Repos/humanlm/cache"
 args=(
-    --gpus "$gpus"
-    --ipc=host
-    -p "$port":8000
-    -v "$cache":/root/.cache/huggingface
-    "$image" "$model"
+    "$model"
+    --port "$port"
 )
 
 optional_args=(
     tool_call_parser
     reasoning_parser
     chat_template
-    gpu_memory_utilizaton
-    kv_cache_dtype
     gpu_memory_utilization
+    kv_cache_dtype
     download_dir
     tensor_parallel_size
-    data_parallel_size
+    # data_parallel_size
     reasoning_parser
 )
 
@@ -146,19 +137,21 @@ if [[ $enable_auto_tool_choice == true ]]; then
     args+=(--enable-auto-tool-choice)
 fi
 
-if [[ $fail_on_environ_validation == true ]]; then
-    args+=(--fail-on-environ-validation)
-fi
+# if [[ $fail_on_environ_validation == true ]]; then
+#     args+=(--fail-on-environ-validation)
+# fi
 
 if [[ $use_rust == true ]]; then
-    args+=(-e VLLM_USE_RUST_FRONTEND=1)
+    export VLLM_USE_RUST_FRONTEND=1
 fi
 
 for opt_arg in "${optional_args[@]}"; do
-    if [[ $opt_arg != "" ]]; then
+    if [[ -n "$opt_arg" ]]; then
         hyphenated_name="${opt_arg//_/-}"
-        args+=("--$hyphenated_name $opt_arg")
+        args+=("--$hyphenated_name" "${!opt_arg}")
     fi
 done
 
-docker run "${args[@]}"
+args+=(--max-model-len 16384 --max-num-seqs 2)
+
+vllm serve "${args[@]}"

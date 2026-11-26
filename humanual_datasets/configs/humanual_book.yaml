@@ -8,4 +8,5 @@ persona_enrichment:
     - rating
     - verified_purchase
     - helpful_vote
+  use_user_profile_fields: []
 
